@@ -38,6 +38,7 @@ maybeList response =
         RemoteData.Failure error ->
             text (toString error)
 
+
 list : List Player -> Html Msg
 list players =
     div [ class "p2" ]
