@@ -1,19 +1,19 @@
 module Players.Edit exposing (..)
 
 import Html exposing (..)
-import Html.Attributes exposing (class, value, href)
-import Html.Events exposing (onClick)
+import Html.Attributes exposing (class, value, href, type_, placeholder)
+import Html.Events exposing (onClick, onInput)
 
 import Msgs exposing (Msg)
 import Models exposing (Player)
 import Routing exposing (playersPath)
 
 
-view : Player -> Html Msg
-view player =
+view : (Player, Player) -> Html Msg
+view (player, editingPlayer) =
     div []
         [ nav player
-        , form player
+        , form editingPlayer
         ]
 
 
@@ -27,8 +27,31 @@ form : Player -> Html Msg
 form player =
     div [ class "m3" ]
         [ h1 [] [ text player.name ]
+        , formName player
         , formLevel player
         ]
+
+formName : Player -> Html Msg
+formName player =
+    div [ class "clearfix py1" ]
+        [ div [ class "col col-5" ]
+              [ input [ type_ "text"
+                      , class "input"
+                      , value player.name
+                      , placeholder "Name"
+                      , onInput (Msgs.ChangingName player) ] []
+              , btnSave player
+              ]
+        ]
+
+btnSave : Player -> Html Msg
+btnSave player =
+    let message =
+            Msgs.ChangePlayer player
+    in
+        a [ class "btn btn-outline blue", onClick message ]
+        [ text "Save" ]
+
 
 
 formLevel : Player -> Html Msg

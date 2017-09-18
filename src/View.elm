@@ -4,7 +4,7 @@ import RemoteData
 import Html exposing (Html, div, text)
 
 import Msgs exposing (Msg)
-import Models exposing (Model, PlayerId)
+import Models exposing (Model, Player, PlayerId)
 import Players.List
 import Players.Edit
 
@@ -40,19 +40,19 @@ playerEditPage model playerId =
         RemoteData.Success players ->
             let maybePlayer =
                     players
-                        |> List.filter (\player -> player.id == playerId)
+                        |> List.filter (.id >> (==) playerId)
                         |> List.head
             in
                 case maybePlayer of
                     Just player ->
-                        Players.Edit.view player
+                        Maybe.withDefault (player, player) model.editing
+                            |> Players.Edit.view
 
                     Nothing ->
                         notFoundView
 
         RemoteData.Failure error ->
             text (toString error)
-
 
 notFoundView : Html Msg
 notFoundView =
