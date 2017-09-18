@@ -1,23 +1,48 @@
 module Update exposing (..)
 
-import RemoteData
+import RemoteData exposing (WebData)
 
 import Msgs exposing (Msg(..))
 import Commands exposing (savePlayerCmd)
-import Models exposing (Model, Player)
+import Models exposing (Model, Notice(..), Player)
 import Routing exposing (parseLocation)
+
+
+noticeRemoteDataResponse : Model -> RemoteData.RemoteData e a -> List Notice
+noticeRemoteDataResponse model data =
+    case data of
+        RemoteData.Loading ->
+            Info "Loading..." :: model.notices
+
+        RemoteData.Failure error ->
+            Alert (toString error) :: model.notices
+
+        _ ->
+            model.notices
 
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
     case msg of
         Msgs.OnFetchPlayers response ->
-            ({ model | players = response }, Cmd.none)
+            ({ model |
+               notices = noticeRemoteDataResponse model response
+             , players = response
+             }, Cmd.none)
 
         Msgs.OnLocationChange location ->
             let newRoute = parseLocation location
             in
                 ({ model | route = newRoute, editing = Nothing }, Cmd.none)
+
+        Msgs.CloseNotice i ->
+            let newNotices =
+                    model.notices
+                        |> List.indexedMap (,)
+                        |> List.filter (Tuple.first >> (/=) i)
+                        |> List.map Tuple.second
+            in
+                ({ model | notices = newNotices }, Cmd.none)
 
         Msgs.ChangeLevel player x ->
             let updatedPlayer =
@@ -26,10 +51,17 @@ update msg model =
                 (model, savePlayerCmd updatedPlayer)
 
         Msgs.OnPlayerSave (Ok player) ->
-            (updatePlayer model player, Cmd.none)
+            let info = Info "Updated the player."
+            in
+                ({ model |
+                   notices = info :: model.notices
+                 , players = updatePlayer model player
+                 }, Cmd.none)
 
         Msgs.OnPlayerSave (Err error) ->
-            (model, Cmd.none)
+            let alert = Alert "Failed to save the player."
+            in
+                ({ model | notices = alert :: model.notices }, Cmd.none)
 
         Msgs.ChangingName player x ->
             let newEditing = Just (player, { player | name = x })
@@ -40,7 +72,7 @@ update msg model =
             (model, savePlayerCmd player)
 
 
-updatePlayer : Model -> Player -> Model
+updatePlayer : Model -> Player -> WebData (List Player)
 updatePlayer model updatedPlayer =
     let
         pick currentPlayer =
@@ -51,10 +83,5 @@ updatePlayer model updatedPlayer =
 
         updatePlayerList players =
             List.map pick players
-
-        updatedPlayers =
-            RemoteData.map updatePlayerList model.players
-
     in
-        { model | players = updatedPlayers }
-
+        RemoteData.map updatePlayerList model.players

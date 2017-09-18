@@ -7,12 +7,14 @@ import Msgs exposing (Msg)
 import Models exposing (Model, Player, PlayerId)
 import Players.List
 import Players.Edit
+import View.Notice
 
 
 view : Model -> Html Msg
 view model =
     div []
-        [ page model ]
+        [ View.Notice.render model
+        , page model ]
 
 
 page : Model -> Html Msg

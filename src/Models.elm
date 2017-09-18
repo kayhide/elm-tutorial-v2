@@ -6,6 +6,7 @@ import RemoteData exposing (WebData)
 type alias Model =
     { players : WebData (List Player)
     , route : Route
+    , notices : List Notice
     , editing : Maybe (Player, Player)
     }
 
@@ -14,6 +15,7 @@ initialModel : Route -> Model
 initialModel route =
     { players = RemoteData.Loading
     , route = route
+    , notices = []
     , editing = Nothing
     }
 
@@ -27,7 +29,9 @@ type alias Player =
     , level : Int
     }
 
-
+type Notice
+    = Info String
+    | Alert String
 
 
 type Route
