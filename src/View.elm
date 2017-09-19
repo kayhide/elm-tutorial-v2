@@ -4,6 +4,7 @@ import RemoteData
 import Html exposing (Html, div, text)
 import Html.Attributes exposing (class)
 import Material.Layout as Layout
+import Material.Snackbar as Snackbar
 
 import Msgs exposing (Msg)
 import Models exposing (Model, Player, PlayerId)
@@ -32,6 +33,7 @@ renderBody model =
     div [ class "px2" ]
         [ View.Notice.render model
         , page model
+        , Snackbar.view model.snackbar |> Html.map Msgs.Snackbar
         ]
 
 page : Model -> Html Msg

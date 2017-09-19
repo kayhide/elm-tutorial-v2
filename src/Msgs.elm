@@ -4,6 +4,7 @@ import Navigation exposing (Location)
 import RemoteData exposing (WebData)
 import Http
 import Material
+import Material.Snackbar as Snackbar
 
 import Models exposing (Player)
 
@@ -19,3 +20,4 @@ type Msg
     | RevertPlayer
 
     | Mdl (Material.Msg Msg)
+    | Snackbar (Snackbar.Msg String)

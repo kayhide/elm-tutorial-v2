@@ -2,6 +2,7 @@ module Update exposing (..)
 
 import RemoteData exposing (WebData)
 import Material
+import Material.Snackbar as Snackbar
 
 import Msgs exposing (Msg(..))
 import Commands exposing (savePlayerCmd)
@@ -53,13 +54,17 @@ update msg model =
 
         Msgs.OnPlayerSave (Ok player) ->
             let info = Info "Updated the player."
+                toast = Snackbar.toast "update-player" "Updated the player."
+                (m, c) = Snackbar.add toast model.snackbar
                 model_ =
                     { model
                         | notices = info :: model.notices
                         , players = updatePlayer model player
+                        , snackbar = m
                     } |> initEditing
+                cmd_ = Cmd.map Msgs.Snackbar c
             in
-                (model_, Cmd.none)
+                (model_, cmd_)
 
         Msgs.OnPlayerSave (Err error) ->
             let alert = Alert "Failed to save the player."
@@ -93,6 +98,12 @@ update msg model =
         Msgs.Mdl msg_ ->
             Material.update Mdl msg_ model
 
+        Msgs.Snackbar msg_ ->
+            let (m, c) = Snackbar.update msg_ model.snackbar
+                model_ = { model | snackbar = m }
+                cmd_ = Cmd.map Msgs.Snackbar c
+            in
+                (model_, cmd_)
 
 updatePlayer : Model -> Player -> WebData (List Player)
 updatePlayer model updatedPlayer =
