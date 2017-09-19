@@ -57,18 +57,12 @@ playerEditPage model playerId =
             text "Loading..."
 
         RemoteData.Success players ->
-            let maybePlayer =
-                    players
-                        |> List.filter (.id >> (==) playerId)
-                        |> List.head
-            in
-                case maybePlayer of
-                    Just player ->
-                        Maybe.withDefault (player, player) model.editing
-                            |> Players.Edit.view model.mdl
+            case model.editing of
+                Just editing ->
+                    Players.Edit.view model.mdl editing
 
-                    Nothing ->
-                        notFoundView
+                Nothing ->
+                    notFoundView
 
         RemoteData.Failure error ->
             text (toString error)

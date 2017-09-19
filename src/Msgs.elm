@@ -13,8 +13,9 @@ type Msg
     | OnLocationChange Location
     | CloseNotice Int
     | OnPlayerSave (Result Http.Error Player)
-    | ChangingName Player String
-    | ChangeLevel Player Int
-    | ChangePlayer Player
+    | ChangeName String
+    | ChangeLevel Int
+    | SavePlayer
+    | RevertPlayer
 
     | Mdl (Material.Msg Msg)

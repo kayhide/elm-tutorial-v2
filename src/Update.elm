@@ -26,15 +26,21 @@ update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
     case msg of
         Msgs.OnFetchPlayers response ->
-            ({ model |
-               notices = noticeRemoteDataResponse model response
-             , players = response
-             }, Cmd.none)
+            let model_ =
+                    { model
+                        | notices = noticeRemoteDataResponse model response
+                        , players = response
+                    } |> initEditing
+            in
+                (model_,  Cmd.none)
 
         Msgs.OnLocationChange location ->
-            let newRoute = parseLocation location
+            let model_ =
+                    { model
+                        | route = parseLocation location
+                    } |> initEditing
             in
-                ({ model | route = newRoute, editing = Nothing }, Cmd.none)
+                (model_,  Cmd.none)
 
         Msgs.CloseNotice i ->
             let newNotices =
@@ -47,31 +53,42 @@ update msg model =
 
         Msgs.OnPlayerSave (Ok player) ->
             let info = Info "Updated the player."
+                model_ =
+                    { model
+                        | notices = info :: model.notices
+                        , players = updatePlayer model player
+                    } |> initEditing
             in
-                ({ model |
-                   notices = info :: model.notices
-                 , players = updatePlayer model player
-                 , editing = Nothing
-                 }, Cmd.none)
+                (model_, Cmd.none)
 
         Msgs.OnPlayerSave (Err error) ->
             let alert = Alert "Failed to save the player."
+                model_ =
+                    { model | notices = alert :: model.notices }
+                        |> initEditing
             in
-                ({ model | notices = alert :: model.notices }, Cmd.none)
+                (model_, Cmd.none)
 
-        Msgs.ChangingName player x ->
+        Msgs.ChangeName x ->
             let f p = { p | name = x }
             in
-                model |> ensureEditing player |> editPlayer f
+                model |> editPlayer f
 
-        Msgs.ChangeLevel player x ->
+        Msgs.ChangeLevel x ->
             let f p = { p | level = p.level + x }
             in
-                model |> ensureEditing player |> editPlayer f
+                model |> editPlayer f
 
-        Msgs.ChangePlayer player ->
-            (model, savePlayerCmd player)
+        Msgs.SavePlayer ->
+            let cmd =
+                    model.editing
+                        |> Maybe.map (Tuple.second >> savePlayerCmd)
+                        |> Maybe.withDefault Cmd.none
+            in
+                (model, cmd)
 
+        Msgs.RevertPlayer ->
+            (model |> initEditing, Cmd.none)
 
         Msgs.Mdl msg_ ->
             Material.update Mdl msg_ model
@@ -91,14 +108,26 @@ updatePlayer model updatedPlayer =
     in
         RemoteData.map updatePlayerList model.players
 
-ensureEditing : Player -> Model -> Model
-ensureEditing player model =
-    case model.editing of
-        Just _ ->
-            model
 
-        Nothing ->
-            { model | editing = Just (player, player) }
+initEditing : Model -> Model
+initEditing model =
+    case (model.route, model.players) of
+        (Models.PlayerRoute id, RemoteData.Success players) ->
+            let maybePlayer =
+                    players
+                        |> List.filter (.id >> (==) id)
+                        |> List.head
+            in
+                case maybePlayer of
+                    Just player ->
+                        { model | editing = Just (player, player) }
+
+                    _ ->
+                        { model | editing = Nothing }
+
+        _ ->
+            { model | editing = Nothing }
+
 
 editPlayer : (Player -> Player) -> Model -> (Model, Cmd Msg)
 editPlayer f model =
