@@ -1,94 +1,112 @@
 module Players.Edit exposing (..)
 
 import Html exposing (..)
-import Html.Attributes exposing (class, value, href, type_, placeholder)
-import Html.Events exposing (onClick, onInput)
+import Material
+import Material.Color as Color
+import Material.Options as Options
+import Material.Typography as Typo
+import Material.Button as Button
+import Material.Icon as Icon
+import Material.Textfield as Textfield
 
 import Msgs exposing (Msg)
 import Models exposing (Player)
 import Routing exposing (playersPath)
 
 
-view : (Player, Player) -> Html Msg
-view (player, editingPlayer) =
+type alias Editing = (Player, Player)
+
+view : Material.Model -> Editing -> Html Msg
+view mdl editing =
     div []
-        [ nav player
-        , form editingPlayer
+        [ heading mdl editing
+        , form mdl editing
         ]
 
 
-nav : Player -> Html Msg
-nav player =
-    div [ class "clearfix mb2 white bg-black p1" ]
-        [ listBtn ]
-
-
-form : Player -> Html Msg
-form player =
-    div [ class "m3" ]
-        [ h1 [] [ text player.name ]
-        , formName player
-        , formLevel player
+heading : Material.Model -> Editing -> Html Msg
+heading mdl (player, _) =
+    div []
+        [ Button.render Msgs.Mdl [0] mdl
+              [ Button.icon
+              , Button.link playersPath ]
+              [ Icon.i "chevron_left" ]
+        , Options.styled h2
+            [ Typo.title, Color.text Color.primary ]
+            [ text player.name ]
         ]
 
-formName : Player -> Html Msg
-formName player =
-    div [ class "clearfix py1" ]
-        [ div [ class "col col-5" ]
-              [ input [ type_ "text"
-                      , class "input"
-                      , value player.name
-                      , placeholder "Name"
-                      , onInput (Msgs.ChangingName player) ] []
-              , btnSave player
-              ]
+form : Material.Model -> Editing -> Html Msg
+form mdl editing =
+    div []
+        [ formName mdl editing
+        , formLevel mdl editing
+        , btnRevert mdl editing
+        , btnSave mdl editing
         ]
 
-btnSave : Player -> Html Msg
-btnSave player =
-    let message =
-            Msgs.ChangePlayer player
-    in
-        a [ class "btn btn-outline blue", onClick message ]
+formName : Material.Model -> Editing -> Html Msg
+formName mdl (player, player_) =
+    Textfield.render Msgs.Mdl [1] mdl
+        [ Textfield.label "Name"
+        , Textfield.floatingLabel
+        , Textfield.text_
+        , Textfield.value player_.name
+        , Options.onInput (Msgs.ChangingName player)
+        ]
+        []
+
+btnRevert : Material.Model -> Editing -> Html Msg
+btnRevert mdl (player, _) =
+    Button.render Msgs.Mdl [2] mdl
+        [ Button.raised
+        , Button.ripple
+        , Options.onClick <| Msgs.ChangePlayer player
+        ]
+        [ text "Revert" ]
+
+btnSave : Material.Model -> Editing -> Html Msg
+btnSave mdl (_, player_) =
+    Button.render Msgs.Mdl [2] mdl
+        [ Button.raised
+        , Button.colored
+        , Button.ripple
+        , Options.onClick <| Msgs.ChangePlayer player_
+        ]
         [ text "Save" ]
 
-
-
-formLevel : Player -> Html Msg
-formLevel player =
-    div [ class "clearfix py1" ]
-        [ div [ class "col col-5" ] [ text "Level" ]
-        , div [ class "col col-7" ]
-            [ span [ class "h2 bold" ] [ text (toString player.level) ]
-            , btnLevelDecrease player
-            , btnLevelIncrease player
-            ]
+formLevel : Material.Model -> Editing -> Html Msg
+formLevel mdl (_, player_) =
+    div []
+        [
+         Textfield.render Msgs.Mdl [3] mdl
+             [ Textfield.label "Level"
+             , Textfield.floatingLabel
+             , Textfield.text_
+             , Textfield.value <| toString player_.level
+             ]
+             []
+        , btnLevelDecrease mdl player_
+        , btnLevelIncrease mdl player_
         ]
 
 
-btnLevelDecrease : Player -> Html Msg
-btnLevelDecrease player =
-    let message =
-            Msgs.ChangeLevel player -1
-    in
-        a [ class "btn ml1 h1", onClick message ]
-            [ i [ class "fa fa-minus-circle" ] [] ]
+btnLevelDecrease : Material.Model -> Player -> Html Msg
+btnLevelDecrease mdl player =
+    Button.render Msgs.Mdl [4] mdl
+        [ Button.icon
+        , Button.colored
+        , Button.ripple
+        , Options.onClick <| Msgs.ChangeLevel player -1
+        ]
+        [ Icon.i "remove_circle" ]
 
-
-btnLevelIncrease : Player -> Html Msg
-btnLevelIncrease player =
-    let message =
-            Msgs.ChangeLevel player 1
-    in
-        a [ class "btn ml1 h1", onClick message ]
-        [ i [ class "fa fa-plus-circle" ] [] ]
-
-
-listBtn : Html Msg
-listBtn =
-    a [ class "btn regular"
-      , href playersPath
-      ]
-      [ i [ class "fa fa-chevron-left mr1" ] []
-      , text "List"
-      ]
+btnLevelIncrease : Material.Model -> Player -> Html Msg
+btnLevelIncrease mdl player =
+    Button.render Msgs.Mdl [5] mdl
+        [ Button.icon
+        , Button.colored
+        , Button.ripple
+        , Options.onClick <| Msgs.ChangeLevel player 1
+        ]
+        [ Icon.i "add_circle" ]

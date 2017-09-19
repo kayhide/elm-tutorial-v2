@@ -1,6 +1,7 @@
 module Update exposing (..)
 
 import RemoteData exposing (WebData)
+import Material
 
 import Msgs exposing (Msg(..))
 import Commands exposing (savePlayerCmd)
@@ -44,18 +45,13 @@ update msg model =
             in
                 ({ model | notices = newNotices }, Cmd.none)
 
-        Msgs.ChangeLevel player x ->
-            let updatedPlayer =
-                    { player | level = player.level + x }
-            in
-                (model, savePlayerCmd updatedPlayer)
-
         Msgs.OnPlayerSave (Ok player) ->
             let info = Info "Updated the player."
             in
                 ({ model |
                    notices = info :: model.notices
                  , players = updatePlayer model player
+                 , editing = Nothing
                  }, Cmd.none)
 
         Msgs.OnPlayerSave (Err error) ->
@@ -64,12 +60,21 @@ update msg model =
                 ({ model | notices = alert :: model.notices }, Cmd.none)
 
         Msgs.ChangingName player x ->
-            let newEditing = Just (player, { player | name = x })
+            let f p = { p | name = x }
             in
-                ({ model | editing = newEditing }, Cmd.none)
+                model |> ensureEditing player |> editPlayer f
+
+        Msgs.ChangeLevel player x ->
+            let f p = { p | level = p.level + x }
+            in
+                model |> ensureEditing player |> editPlayer f
 
         Msgs.ChangePlayer player ->
             (model, savePlayerCmd player)
+
+
+        Msgs.Mdl msg_ ->
+            Material.update Mdl msg_ model
 
 
 updatePlayer : Model -> Player -> WebData (List Player)
@@ -85,3 +90,21 @@ updatePlayer model updatedPlayer =
             List.map pick players
     in
         RemoteData.map updatePlayerList model.players
+
+ensureEditing : Player -> Model -> Model
+ensureEditing player model =
+    case model.editing of
+        Just _ ->
+            model
+
+        Nothing ->
+            { model | editing = Just (player, player) }
+
+editPlayer : (Player -> Player) -> Model -> (Model, Cmd Msg)
+editPlayer f model =
+    case model.editing of
+        Just (player, player_) ->
+            ({ model | editing = Just (player, f player_) }, Cmd.none)
+
+        Nothing ->
+            (model, Cmd.none)

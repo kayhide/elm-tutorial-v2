@@ -2,6 +2,8 @@ module View exposing (..)
 
 import RemoteData
 import Html exposing (Html, div, text)
+import Html.Attributes exposing (class)
+import Material.Layout as Layout
 
 import Msgs exposing (Msg)
 import Models exposing (Model, Player, PlayerId)
@@ -12,16 +14,31 @@ import View.Notice
 
 view : Model -> Html Msg
 view model =
-    div []
-        [ View.Notice.render model
-        , page model ]
+    Layout.render Msgs.Mdl model.mdl
+        [ Layout.fixedHeader ]
+        { header = [ renderHeader model ]
+        , drawer = []
+        , tabs = ([], [])
+        , main = [renderBody model]
+        }
 
+renderHeader : Model -> Html Msg
+renderHeader model =
+    Layout.row []
+        [ Layout.title [] [ text "Tutorial" ] ]
+
+renderBody : Model -> Html Msg
+renderBody model =
+    div [ class "px2" ]
+        [ View.Notice.render model
+        , page model
+        ]
 
 page : Model -> Html Msg
 page model =
     case model.route of
         Models.PlayersRoute ->
-            Players.List.view model.players
+            Players.List.view model.mdl model.players
 
         Models.PlayerRoute id ->
             playerEditPage model id
@@ -48,7 +65,7 @@ playerEditPage model playerId =
                 case maybePlayer of
                     Just player ->
                         Maybe.withDefault (player, player) model.editing
-                            |> Players.Edit.view
+                            |> Players.Edit.view model.mdl
 
                     Nothing ->
                         notFoundView
